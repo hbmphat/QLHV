@@ -119,6 +119,7 @@
         <span id="chatBadge" class="chat-notification-badge">0</span>
     </button>
 </div>
+<!-- LỊCH SỬ HOẠT ĐỘNG -->
 <div id="historyModal" class="modal">
     <div class="modal-content" style="width: 1500px; max-width: 95%; height: 85vh; display: flex; flex-direction: column;">
 
@@ -472,11 +473,11 @@
                 <div class="form-group">
                     <label>Trạng thái công việc</label>
                     <select name="status" id="e_status" class="form-control" style="font-weight: bold; color: var(--primary-color);">
-                        <option value="dang_day">🟢 Đang giảng dạy</option>
-                        <option value="thu_viec">🔵 Thử việc</option>
-                        <option value="nghi_phep">🟠 Nghỉ phép</option>
-                        <option value="tam_nghi">🟣 Tạm nghỉ</option>
-                        <option value="nghi_viec">🔴 Đã nghỉ việc</option>
+                        <option value="dang_day">Đang giảng dạy</option>
+                        <option value="thu_viec">Thử việc</option>
+                        <option value="nghi_phep">Nghỉ phép</option>
+                        <option value="tam_nghi">Tạm nghỉ</option>
+                        <option value="nghi_viec">Đã nghỉ việc</option>
                     </select>
                 </div>
             </div>

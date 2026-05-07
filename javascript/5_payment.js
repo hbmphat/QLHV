@@ -1,14 +1,23 @@
 document.addEventListener("DOMContentLoaded", function() {
-   
+
+    const BANK_CONFIG = {
+        id: "970423",
+        acc: "07564271147",
+        name: "TRUNG TAM TIENG ANH ENGBREAK"
+    };
+    
+    //biển toàn cục
     const filterClass = document.getElementById('filter_class');
     const filterStatus = document.getElementById('filter_status');
     const searchInput = document.querySelector('input[name="search"]');
     const cards = document.querySelectorAll('.pay-card');
+    const pkgSelect = document.getElementById('pay_package');
 
+    //lọc ds
     function filterCards() {
-        const sClass = filterClass.value.toLowerCase();
-        const sStatus = filterStatus.value;
-        const sText = searchInput.value.toLowerCase();
+        const sClass = filterClass ? filterClass.value.toLowerCase() : '';
+        const sStatus = filterStatus ? filterStatus.value : '';
+        const sText = searchInput ? searchInput.value.toLowerCase() : '';
 
         cards.forEach(card => {
             const dClass = card.getAttribute('data-class').toLowerCase();
@@ -21,19 +30,19 @@ document.addEventListener("DOMContentLoaded", function() {
             card.style.display = isShow ? 'flex' : 'none';
         });
     }
+
     if(filterClass) filterClass.addEventListener('change', filterCards);
     if(filterStatus) filterStatus.addEventListener('change', filterCards);
     if(searchInput) searchInput.addEventListener('input', filterCards);
 
 
-    //logic thanh toán
+    //modal thanh toán
     window.openPayModal = function(studentId, classId, studentName, endDateStr, autoShowQR = false) {
         document.getElementById('pay_student_id').value = studentId;
         document.getElementById('pay_class_id').value = classId;
         document.getElementById('disp_student_name').innerText = studentName;
         
-        const pkgSelect = document.getElementById('pay_package');
-        pkgSelect.innerHTML = '<option value="">Đang tải gói học phí...</option>';
+        if(pkgSelect) pkgSelect.innerHTML = '<option value="">Đang tải gói học phí...</option>';
         resetBillUI();
         
         document.getElementById('qr-area').style.display = 'none';
@@ -42,39 +51,40 @@ document.addEventListener("DOMContentLoaded", function() {
 
         openModal('paymentModal');
 
-        //gọi api
+        // api lấy gói học phí
         fetch(`../api/api_get_tuition_info.php?student_id=${studentId}&class_id=${classId}`)
             .then(res => res.json())
             .then(data => {
-                if(data.error) { alert(data.error); return; }
+                if(data.error) { window.showAlert(data.error); return; }
 
-                pkgSelect.innerHTML = '<option value="">-- Chọn gói gia hạn --</option>';
-                data.packages.forEach(pkg => {
-                    const opt = document.createElement('option');
-                    opt.value = pkg.id;
-                    opt.text = `${pkg.week_duration} Tuần - ${new Intl.NumberFormat('vi-VN').format(pkg.tuition_fee)} đ`;
-                    opt.setAttribute('data-price', pkg.tuition_fee);
-                    opt.setAttribute('data-weeks', pkg.week_duration);
-                    pkgSelect.appendChild(opt);
-                });
+                if(pkgSelect) {
+                    pkgSelect.innerHTML = '<option value="">-- Chọn gói gia hạn --</option>';
+                    data.packages.forEach(pkg => {
+                        const opt = document.createElement('option');
+                        opt.value = pkg.id;
+                        opt.text = `${pkg.week_duration} Tuần - ${new Intl.NumberFormat('vi-VN').format(pkg.tuition_fee)} đ`;
+                        opt.setAttribute('data-price', pkg.tuition_fee);
+                        opt.setAttribute('data-weeks', pkg.week_duration);
+                        pkgSelect.appendChild(opt);
+                    });
 
-                pkgSelect.setAttribute('data-discount-percent', data.promo.percent);
+                    pkgSelect.setAttribute('data-discount-percent', data.promo.percent);
+                }
                 document.getElementById('disp_promo_name').innerText = data.promo.name + ` (-${data.promo.percent}%)`;
 
-                if(autoShowQR) {
+                if(autoShowQR && pkgSelect) {
                     if (pkgSelect.options.length > 1) {
                         pkgSelect.selectedIndex = 1;
                         pkgSelect.dispatchEvent(new Event('change'));
-                        toggleQR();
+                        window.toggleQR();
                     } else {
-                        alert("Học viên này chưa có gói học phí phù hợp để tạo QR!");
+                        window.showAlert("Học viên này chưa có gói học phí phù hợp để tạo QR!");
                     }
                 }
             });
     }
 
-    //tính hp khi chọn gói
-    const pkgSelect = document.getElementById('pay_package');
+    //tính toán theo gói chọn
     if(pkgSelect) {
         pkgSelect.addEventListener('change', function() {
             const selected = this.options[this.selectedIndex];
@@ -103,11 +113,26 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('bill_original').innerText = '0 đ';
         document.getElementById('bill_discount').innerText = '0 đ';
         document.getElementById('bill_final').innerText = '0 đ';
-        document.getElementById('qr-image').src = "";
+        const qrImg = document.getElementById('qr-image');
+        if(qrImg) qrImg.src = "";
     }
     
     function formatMoney(amount) {
         return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+    }
+
+    window.setMethod = function(method) {
+        document.getElementById('inp_payment_method').value = method;
+    }
+
+    window.showAlert = function(message) {
+        const msgEl = document.getElementById('alert-msg');
+        if (msgEl) {
+            msgEl.innerText = message;
+            openModal('alertModal');
+        } else {
+            alert(message);
+        }
     }
 
     //logic vietqr
@@ -118,13 +143,14 @@ document.addEventListener("DOMContentLoaded", function() {
         const finalAmount = document.getElementById('inp_final').value;
 
         if (!finalAmount || finalAmount == 0) {
-            alert("Vui lòng chọn gói học phí trước!");
+            window.showAlert("Vui lòng chọn gói học phí trước khi tạo mã QR!");
             return;
         }
 
         if (qrArea.style.display === 'none') {
             updateQRCode(finalAmount);
             qrArea.style.display = 'block';
+            qrArea.style.animation = "slideDown 0.3s ease";
             btnShow.style.display = 'none';
             btnConfirm.style.display = 'flex';
         }
@@ -133,15 +159,13 @@ document.addEventListener("DOMContentLoaded", function() {
     function updateQRCode(amount) {
         const studentName = document.getElementById('disp_student_name').innerText;
         const content = `HP ${removeVietnameseTones(studentName)}`.substring(0, 50);
+        
         const qrUrl = `https://img.vietqr.io/image/${BANK_CONFIG.id}-${BANK_CONFIG.acc}-compact.png?amount=${amount}&addInfo=${encodeURIComponent(content)}&accountName=${encodeURIComponent(BANK_CONFIG.name)}`;
         
-        document.getElementById('qr-image').src = qrUrl;
+        const qrImg = document.getElementById('qr-image');
+        if(qrImg) qrImg.src = qrUrl;
     }
-    //set phương thức thanh toán trước khi submit
-    window.setMethod = function(method) {
-        document.getElementById('inp_payment_method').value = method;
-    }
-    //bỏ dấu tiếng Việt
+
     function removeVietnameseTones(str) {
         str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); 
         str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); 
@@ -160,14 +184,20 @@ document.addEventListener("DOMContentLoaded", function() {
         return str;
     }
 
-    //history
+    //lịch sử
     window.openHistoryPayModal = function(studentId, studentName) {
         document.getElementById('his_student_name').innerText = studentName;
         const body = document.getElementById('history_body');
         body.innerHTML = '<div class="loader"></div>';
         openModal('historyPayModal');
-        fetch(`../api/api_get_payment_history.php?student_id=${studentId}`).then(res=>res.text()).then(html=>{body.innerHTML=html;});
+        fetch(`../api/api_get_payment_history.php?student_id=${studentId}`)
+            .then(res=>res.text())
+            .then(html=>{body.innerHTML=html;});
     }
+
     const alertBox = document.querySelector('.alert-box');
-    if (alertBox) setTimeout(() => { alertBox.classList.add('hide'); setTimeout(() => alertBox.remove(), 500); }, 5000);
+    if (alertBox) setTimeout(() => { 
+        alertBox.classList.add('hide'); 
+        setTimeout(() => alertBox.remove(), 500); 
+    }, 5000);
 });

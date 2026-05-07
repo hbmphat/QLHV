@@ -36,7 +36,7 @@
                         </select>
 
                         <select id="filter_teacher" class="filter-select">
-                            <option value="">-- Tất cả Giáo viên --</option>
+                            <option value="">-- Tất cả Giảng viên --</option>
                             <?php foreach ($teachers as $t): ?>
                                 <option value="<?php echo $t['id']; ?>">
                                     <?php echo $t['full_name']; ?>

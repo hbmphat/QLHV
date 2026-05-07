@@ -61,8 +61,11 @@
             <?php endif; ?>
 
             <div class="teacher-grid">
-                <?php foreach ($teachers as $t): ?>
-                    <div class="teacher-card">
+                <?php foreach ($teachers as $t):
+                    $assignStatus = (isset($t['class_count']) && $t['class_count'] > 0) ? 'has_class' : 'no_class';
+                ?>
+                    <div class="teacher-card" data-status="<?php echo $t['status']; ?>"
+                        data-assign="<?php echo $assignStatus; ?>">
                         <span class="t-status st-<?php echo $t['status']; ?>">
                             <?php
                             $stMap = [

@@ -70,7 +70,7 @@ try {
             SELECT t.full_name, t.avatar, 
                    COUNT(c.id) as class_count, 
                    SUM(c.student_count) as total_students
-            FROM teachers t
+            FROM teachers t 
             LEFT JOIN classes c ON t.id = c.teacher_id AND c.status = 1
             WHERE t.status = 'dang_day'
             GROUP BY t.id

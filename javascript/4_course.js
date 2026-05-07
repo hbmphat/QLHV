@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('lvl_action').value = 'add_level';
             document.getElementById('lvl_id').value = '';
             document.getElementById('lvl_name').value = '';
-            ocument.getElementById('lvl_duration').value = '5-6 tháng';
+            document.getElementById('lvl_duration').value = '5-6 tháng';
             document.getElementById('lvl_desc').value = '';
             document.getElementById('lvl_modal_title').innerText = "Thêm Cấp Độ Mới";
             document.getElementById('lvl_btn_submit').innerText = "Tạo mới";
